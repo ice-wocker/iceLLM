@@ -121,18 +121,23 @@ is_running() {
 }
 
 get_ip() {
+  # Android 15 的 toybox ifconfig 不支持指定网卡名, ip 命令也被禁
+  # 只能解析不带参数的 ifconfig 输出
   local ip
-  ip=$(ifconfig wlan0 2>/dev/null | grep 'inet ' | awk '{print $2}' | head -1)
-  [ -z "$ip" ] && ip=$(ifconfig eth0 2>/dev/null | grep 'inet ' | awk '{print $2}' | head -1)
+  ip=$(ifconfig 2>/dev/null | awk '
+    /^(wlan0|ap0|eth0|rndis0|dummy0):/ { f=1; next }
+    /^[a-zA-Z0-9-]+:/                  { f=0 }
+    f && /inet /                       { print $2; exit }')
   echo "${ip:-<本机IP>}"
 }
 
 wait_health() {
-  local i
-  for i in $(seq 1 60); do
-    local h
+  local i h
+  for i in $(seq 1 90); do
     h=$(curl -s --max-time 2 "http://127.0.0.1:$PORT/health" 2>/dev/null)
-    [ -n "$h" ] && { echo "$h"; return 0; }
+    case "$h" in *'"ok"'*) echo "$h"; return 0 ;; esac
+    # 进程死了就直接失败
+    is_running || { tail -3 "$LOG" 2>/dev/null; return 1; }
     sleep 1
   done
   return 1
