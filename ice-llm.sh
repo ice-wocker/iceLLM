@@ -2,7 +2,7 @@
 # =============================================================================
 #  iceLLM — 一行命令把安卓手机变成 OpenAI 兼容的本地 AI 服务器
 #
-#  安装:  curl -fsSL https://raw.githubusercontent.com/ice-wocker/iceLLM/main/ice-llm.sh | bash
+#  安装:  curl -fsSL https://cdn.jsdelivr.net/gh/ice-wocker/iceLLM@main/ice-llm.sh | bash
 #  用法:  ice-llm <start|stop|restart|status|logs|models|model|url|autostart>
 #
 #  依赖:  Termux + llama-cpp (自动安装)

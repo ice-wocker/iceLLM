@@ -10,6 +10,11 @@
 curl -fsSL https://raw.githubusercontent.com/ice-wocker/iceLLM/main/ice-llm.sh | bash
 ```
 
+> 🇨🇳 raw 域名不通？用 jsDelivr CDN 版：
+> ```bash
+> curl -fsSL https://cdn.jsdelivr.net/gh/ice-wocker/iceLLM@main/ice-llm.sh | bash
+> ```
+
 装完就有一个局域网里可用的本地 LLM：
 - **WebUI** — 手机浏览器直接聊
 - **OpenAI API** — `http://手机IP:8080/v1/chat/completions`，任何 OpenAI 客户端（Cherry Studio / Open WebUI / 你的代码）改个 base_url 就能接
@@ -34,7 +39,7 @@ iceLLM 做的事：
 F-Droid 或 GitHub Releases 下载（Play Store 版已停更，别用）。
 
 ### 2. 一行安装
-在 Termux 里执行：
+在 Termux 里执行（raw 不通就换上面 jsDelivr 版）：
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ice-wocker/iceLLM/main/ice-llm.sh | bash
 ```
