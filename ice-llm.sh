@@ -3,7 +3,7 @@
 #  iceLLM — 一行命令把安卓手机变成 OpenAI 兼容的本地 AI 服务器
 #
 #  安装:  curl -fsSL https://cdn.jsdelivr.net/gh/ice-wocker/iceLLM@main/ice-llm.sh | bash
-#  用法:  ice-llm <start|stop|restart|status|logs|models|model|url|autostart>
+#  用法:  ice-llm <start|stop|restart|status|logs|models|model|url|test|autostart>
 #
 #  依赖:  Termux + llama-cpp (自动安装)
 #  模型:  ModelScope 下载 (国内直连), 默认 MiniCPM5-1B-Q4_K_M
@@ -219,6 +219,24 @@ cmd_status() {
   fi
 }
 
+cmd_test() {
+  if ! is_running; then echo "$(c_red '服务未运行, 先 ice-llm start')"; return 1; fi
+  info "发一条自检请求 (手机 CPU 推理, 可能要 1-3 分钟, 耐心等)..."
+  local t0 t1 code
+  t0=$(date +%s)
+  code=$(curl -sS --max-time 420 "http://127.0.0.1:$PORT/v1/chat/completions" \
+    -H 'Content-Type: application/json' \
+    -d '{"model":"local","messages":[{"role":"user","content":"1+1=? answer with the number only"}],"max_tokens":20,"temperature":0,"reasoning_effort":"none"}' \
+    -o "$BASE/test_last.json" -w '%{http_code}' 2>/dev/null)
+  t1=$(date +%s)
+  if [ "$code" = "200" ]; then
+    ok "自检通过 ($(($t1-$t0))s)"
+    grep -o '"content":"[^"]*"' "$BASE/test_last.json" | head -1
+  else
+    die "自检失败 (http=$code), 见 ice-llm logs"
+  fi
+}
+
 cmd_autostart() {
   local want="${1:-on}"
   local marker="# >>> iceLLM autostart >>>"
@@ -257,10 +275,11 @@ case "$cmd" in
   model)    shift; download_model "${1:?用法: ice-llm model <名称|URL>}"; cmd_start ;;
   models)   cmd_models ;;
   url)      show_urls ;;
+  test)     cmd_test ;;
   autostart) cmd_autostart "${2:-on}" ;;
   version)  echo "iceLLM v$VERSION" ;;
   *)        echo "iceLLM v$VERSION — 安卓手机本地 AI 服务器"
-            echo "用法: ice-llm <install|start|stop|restart|status|logs|models|model|url|autostart|version>"
+            echo "用法: ice-llm <install|start|stop|restart|status|logs|models|model|url|test|autostart|version>"
             echo "  不带参数 = 安装并启动 (默认模型 minicpm5, 约 688MB)"
             ;;
 esac

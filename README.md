@@ -63,6 +63,7 @@ ice-llm models          # 已下载 + 可下载的模型
 ice-llm model qwen15    # 下载并切换模型
 ice-llm model <任意gguf URL>   # 下任意模型
 ice-llm url             # 重新打印访问地址
+ice-llm test            # 自检: 发一条真实推理请求 (1B 模型可能要 1-3 分钟)
 ice-llm logs            # 看服务端日志
 ice-llm autostart on    # Termux 开机自启
 ```
@@ -111,6 +112,9 @@ print(r.choices[0].message.content)
 
 **Q: 后台跑一会儿就没了？**
 Termux 被系统杀了。Termux 设置里开「Acquire wakelock」，或 `ice-llm autostart on` + 装 termux-api。
+
+**Q: MiniCPM5 回复是空的/特别慢？**
+它是思考模型，默认先生成一大段 `reasoning_content` 再给正文。请求里加 `"reasoning_effort":"none"` 可关掉思考（实测 31s vs 74s，速度翻倍）。`ice-llm test` 已内置这个参数。
 
 **Q: 局域网以外能访问吗？**
 默认只监听局域网。要公网访问请自己套 frp / Tailscale，并务必加 `--api-key`。
