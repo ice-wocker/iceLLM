@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Syntax check (bash -n)
+        run: bash -n ice-llm.sh
+
+      # 这是一个 `curl | bash` 直接执行的安装脚本，语法错误或未定义变量
+      # 会直接在用户手机上炸掉，所以 lint 按最严级别跑（-S style 即全部级别）
+      - name: ShellCheck (all severities)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck
+          shellcheck --version
+          shellcheck -S style ice-llm.sh
+
+      - name: Smoke test basic commands
+        run: |
+          export ICE_LLM_HOME="$RUNNER_TEMP/ice-llm"
+          # 非 Termux 环境下安装/启动会被拦下，但 help / version 应始终可用
+          bash ice-llm.sh version
+          bash ice-llm.sh help   | grep -q "Usage:"
+          bash ice-llm.sh models | head -5 || true

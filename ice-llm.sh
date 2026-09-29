@@ -429,10 +429,14 @@ find_local() {
 }
 
 pick_newest_gguf() {
+  # 用 find -print0 + 按 mtime 排序，替代 ls -1t：
+  # 模型文件名可能含空格，ls 的解析会出错（SC2012）
   local f
-  f="$(ls -1t "$MODELS_DIR"/*.gguf 2>/dev/null | head -n1)"
-  [ -n "$f" ] && { echo "$f"; return; }
-  ls -1t "$HOME"/*.gguf 2>/dev/null | head -n1
+  f="$(find "$MODELS_DIR" -maxdepth 1 -name '*.gguf' -printf '%T@\t%p\0' 2>/dev/null \
+        | sort -zrn | head -zn1 | cut -z -f2- | tr -d '\0')"
+  if [ -n "$f" ]; then echo "$f"; return; fi
+  find "$HOME" -maxdepth 1 -name '*.gguf' -printf '%T@\t%p\0' 2>/dev/null \
+    | sort -zrn | head -zn1 | cut -z -f2- | tr -d '\0'
 }
 
 pick_default_model() {
@@ -492,7 +496,9 @@ start_server() {
     echo
     echo "=== iceLLM start $(date '+%F %T') | $(basename "$model") | ctx=$CTX t=$THREADS np=$PARALLEL port=$PORT ==="
   } >> "$LOG" 2>/dev/null
-  command -v termux-wake-lock >/dev/null 2>&1 && termux-wake-lock 2>/dev/null || true
+  if command -v termux-wake-lock >/dev/null 2>&1; then
+    termux-wake-lock 2>/dev/null || true
+  fi
   nohup "${SERVER_ARGS[@]}" >> "$LOG" 2>&1 &
   echo $! > "$PIDFILE"
   h="$(wait_health)"; rc=$?
@@ -552,7 +558,9 @@ cmd_start() {
     download_model "$DEFAULT_MODEL" || die "Failed to download the default model"
     model="$DL_PATH"
   fi
-  [ -n "$model" ] && [ -f "$model" ] || die "Model file not found: ${model:-<none>}"
+  if [ -z "$model" ] || [ ! -f "$model" ]; then
+    die "Model file not found: ${model:-<none>}"
+  fi
 
   rotate_log
 
@@ -604,7 +612,9 @@ cmd_stop() {
       echo "Not running"
     fi
   fi
-  command -v termux-wake-unlock >/dev/null 2>&1 && termux-wake-unlock 2>/dev/null || true
+  if command -v termux-wake-unlock >/dev/null 2>&1; then
+    termux-wake-unlock 2>/dev/null || true
+  fi
 }
 
 cmd_status() {
@@ -802,7 +812,9 @@ cmd_config() {
     path) echo "$CONFIG_FILE" ;;
     get)  [ -n "${2:-}" ] || die "Usage: ice-llm config get <key>"; config_get "$2" ;;
     set)
-      [ -n "${2:-}" ] && [ -n "${3:-}" ] || die "Usage: ice-llm config set <key> <value>"
+      if [ -z "${2:-}" ] || [ -z "${3:-}" ]; then
+        die "Usage: ice-llm config set <key> <value>"
+      fi
       config_validate "$2" "$3"
       mkdir -p "$BASE"; touch "$CONFIG_FILE"
       if grep -qE "^[[:space:]]*$2=" "$CONFIG_FILE"; then
@@ -852,11 +864,16 @@ cmd_doctor() {
   else
     line "llama-server" "MISSING (fix: pkg install llama-cpp)"; issues=$((issues + 1))
   fi
-  command -v curl >/dev/null 2>&1 && line "curl" "$(command -v curl)" \
-    || { line "curl" "MISSING (fix: pkg install curl)"; issues=$((issues + 1)); }
-  command -v termux-wake-lock >/dev/null 2>&1 \
-    && line "wakelock" "termux-wake-lock available" \
-    || line "wakelock" "not available (install termux-api for best reliability)"
+  if command -v curl >/dev/null 2>&1; then
+    line "curl" "$(command -v curl)"
+  else
+    line "curl" "MISSING (fix: pkg install curl)"; issues=$((issues + 1))
+  fi
+  if command -v termux-wake-lock >/dev/null 2>&1; then
+    line "wakelock" "termux-wake-lock available"
+  else
+    line "wakelock" "not available (install termux-api for best reliability)"
+  fi
 
   if is_running; then
     line "server" "running (PID $(read_pid), uptime $(uptime_of "$(read_pid)"))"
@@ -900,6 +917,7 @@ cmd_autostart() {
       if grep -qF "$AUTOSTART_BEGIN" "$prof" 2>/dev/null; then
         ok "Autostart already enabled in $prof"
       else
+        # shellcheck disable=SC2094  # tail 在子 shell 里先读完，才由 >> 追加，无读写竞争
         {
           [ -f "$prof" ] && [ -n "$(tail -c1 "$prof" 2>/dev/null)" ] && echo
           echo "$AUTOSTART_BEGIN"
