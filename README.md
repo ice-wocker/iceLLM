@@ -7,9 +7,13 @@
 ![version](https://img.shields.io/badge/version-2.0.0-blue.svg)
 ![model](https://img.shields.io/badge/models-MiniCPM5%20%7C%20Qwen2.5%20%7C%20Qwen3-orange.svg)
 [![中文](https://img.shields.io/badge/%E6%96%87%E6%A1%A3-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-red.svg)](#中文)
+[![CI](https://github.com/ice-wocker/iceLLM/actions/workflows/ci.yml/badge.svg)](https://github.com/ice-wocker/iceLLM/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/ice-wocker/iceLLM)](https://github.com/ice-wocker/iceLLM/releases)
+[![Stars](https://img.shields.io/github/stars/ice-wocker/iceLLM)](https://github.com/ice-wocker/iceLLM/stargazers)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ice-wocker/iceLLM/main/ice-llm.sh | bash
+# 锁定版本示例：见 Releases 页对应 tag
 ```
 
 > raw.githubusercontent.com blocked? Use the jsDelivr CDN mirror:
@@ -381,3 +385,9 @@ Termux (安卓)
 ---
 
 Made with ❄ on Android — [ice-wocker](https://github.com/ice-wocker)
+
+---
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=ice-wocker/iceLLM&type=Date)](https://www.star-history.com/#ice-wocker/iceLLM&Date)
